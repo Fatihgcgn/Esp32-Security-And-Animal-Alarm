@@ -1,0 +1,15 @@
+React Name = React 1
+Condition Type = String
+Test Frequency = On Data Insertion
+Condition If channel Alarm Sistemi (2128252)
+
+field = 1 (pir)
+is equal to = 1
+
+Action = MATLAB Analysis
+
+Code to execute
+Read Channel to Trigger Email 2 //ThingSpeakTrigger
+
+Options
+Run action each time condition is met
