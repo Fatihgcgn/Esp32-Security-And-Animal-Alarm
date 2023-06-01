@@ -1,0 +1,161 @@
+#include <WiFi.h>
+#include <ThingSpeak.h>
+#include <ESP_Mail_Client.h>
+
+#define SECRET_SSID "Wokwi-GUEST"
+#define SECRET_PASS ""
+
+#define SECRET_CH_ID 2128252
+#define SECRET_WRITE_APIKEY "BM7SOZA3RL66TJEZ"
+
+/*                             SMTPSession smtp;         
+
+  void smtpCallback(SMTP_Status status){
+  Serial.println(status.info());
+  
+  if (status.success()){
+    Serial.println("----------------");
+    ESP_MAIL_PRINTF("Message sent success: %d\n", status.completedCount());
+    ESP_MAIL_PRINTF("Message sent failled: %d\n", status.failedCount());
+    Serial.println("----------------\n");
+    struct tm dt;
+
+    for (size_t i = 0; i < smtp.sendingResult.size(); i++){
+      SMTP_Result result = smtp.sendingResult.getItem(i);
+      time_t ts = (time_t)result.timestamp;
+      localtime_r(&ts, &dt);
+
+      ESP_MAIL_PRINTF("Message No: %d\n", i + 1);
+      ESP_MAIL_PRINTF("Status: %s\n", result.completed ? "success" : "failed");
+      ESP_MAIL_PRINTF("Date/Time: %d/%d/%d %d:%d:%d\n", dt.tm_year + 1900, dt.tm_mon + 1, dt.tm_mday, dt.tm_hour, dt.tm_min, dt.tm_sec);
+      ESP_MAIL_PRINTF("Recipient: %s\n", result.recipients);
+      ESP_MAIL_PRINTF("Subject: %s\n", result.subject);
+    }
+    Serial.println("----------------\n");
+  }
+} */
+
+//String thingspeak_ip = "184.106.153.149";
+
+int ledPin =  12;
+int inputPir = 13;
+int PirState = LOW;
+int val = 0;
+int K = 0;
+
+char ssid[] = SECRET_SSID;
+char pass[] = SECRET_PASS;
+int keyIndex = 0;
+WiFiClient client;
+unsigned long myChannelNumber = SECRET_CH_ID;
+const char * myWriteAPIKey = SECRET_WRITE_APIKEY;
+
+void initWiFi() {
+  //Serial.begin(115200);
+  Serial.print("Connecting to WiFi");
+  WiFi.begin(SECRET_SSID, SECRET_PASS, 6);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(100);
+    Serial.print(".");
+  }
+  Serial.println(" Connected!");
+  ThingSpeak.begin(client);
+}
+
+/* void smtpCallback(SMTP_Status status); */
+
+void setup() {
+  // put your setup code here, to run once:
+  pinMode(ledPin, OUTPUT);
+  pinMode(inputPir, INPUT);
+  Serial.begin(115200);
+  initWiFi();
+
+  /*smtp.debug(1);
+
+  smtp.callback(smtpCallback);
+
+  ESP_Mail_Session session;
+
+  session.server.host_name = SMTP_HOST;
+  session.server.port = SMTP_PORT;
+  session.login.email = AUTHOR_EMAIL;
+  session.login.password = AUTHOR_PASSWORD;
+  session.login.user_domain = "mydomain.net";
+
+  SMTP_Message message;
+
+  message.sender.name = "ESP";
+  message.sender.email = AUTHOR_EMAIL;
+  message.subject = "ESP Test Email";
+  message.addRecipient("Fatih", RECIPIENT_EMAIL);
+
+  String htmlMsg = "<div style=\"color:#2f4468;\"><h1>Hello World!</h1><p>- Sent from ESP board</p></div>";
+  message.html.content = htmlMsg.c_str();
+  message.html.content = htmlMsg.c_str();
+  message.text.charSet = "us-ascii";
+  message.html.transfer_encoding = Content_Transfer_Encoding::enc_7bit;
+
+  String textMsg = "Hello World! - Sent from ESP board";
+  message.text.content = textMsg.c_str();
+  message.text.charSet = "us-ascii";
+  message.text.transfer_encoding = Content_Transfer_Encoding::enc_7bit;
+
+  message.priority = esp_mail_smtp_priority::esp_mail_smtp_priority_low;
+  message.response.notify = esp_mail_smtp_notify_success | esp_mail_smtp_notify_failure | esp_mail_smtp_notify_delay;
+
+  if (!smtp.connect(&session))
+    return;
+
+  if (!MailClient.sendMail(&smtp, &message))
+    Serial.println("Error sending Email, " + smtp.errorReason());   */
+
+
+  Serial.println("Baslatiliyor...");
+}
+
+void loop() {
+  if(WiFi.status() !=WL_CONNECTED)
+    {
+      Serial.print("SSID Baglanmaya calisiyor");
+      Serial.print(SECRET_SSID);
+      while(WiFi.status() != WL_CONNECTED)
+      {
+        WiFi.begin(ssid,pass);
+        Serial.print(".");
+        delay(3000);
+      }
+      Serial.println("\nConnected.");
+    }
+  val = digitalRead(inputPir);
+  if (val == HIGH) {
+    digitalWrite(ledPin, HIGH);
+    if (PirState == LOW) {
+      Serial.println("Hareket Algilandi!");
+      PirState = HIGH;
+      K = ThingSpeak.writeField(myChannelNumber, 1,val,myWriteAPIKey);
+      delay(1000);
+    }
+  } else {
+    digitalWrite(ledPin, LOW);
+    if (PirState == HIGH) {
+      Serial.println("Hareket Sona erdi!");
+      PirState = LOW;
+      K = ThingSpeak.writeField(myChannelNumber, 1,val,myWriteAPIKey);
+    }
+  }
+
+//int K = ThingSpeak.writeField(myChannelNumber, 1,PirState,myWriteAPIKey);
+
+if(K == 200)
+{
+  Serial.println("Veri Gonderimi Basarili.");
+}
+else
+{
+  Serial.println("Veri Gonderilmedi " + String(K));
+}
+  // put your main code here, to run repeatedly:
+  delay(1000); // this speeds up the simulation
+
+}
