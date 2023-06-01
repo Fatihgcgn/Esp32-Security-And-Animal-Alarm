@@ -1,0 +1,7 @@
+alert_body = 'Evinizde izinsiz misafir var !!';
+alert_subject = 'HAREKET ALGILANDI';
+alert_api_key = 'TAKKgEes03TkQvC0jPt';
+alert_url= "https://api.thingspeak.com/alerts/send";
+jsonmessage = sprintf(['{"subject": "%s", "body": "%s"}'], alert_subject,alert_body);
+options = weboptions("HeaderFields", {'Thingspeak-Alerts-API-Key', alert_api_key; 'Content-Type','application/json'});
+result = webwrite(alert_url, jsonmessage, options);
